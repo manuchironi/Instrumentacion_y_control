@@ -6,7 +6,7 @@ Created on Mon Apr 22 19:32:14 2019
 """
 
 import numpy as np
-#import visa
+import visa
 import matplotlib.pyplot as plt
 import time
 #from lantz import MessageBasedDriver, Q_
@@ -58,6 +58,7 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.label_9.setEnabled(False)
         self.label_10.setEnabled(False)
         self.groupBox_2.setEnabled(False)
+        self.rm = visa.ResourceManager()
         
         #Proceso para abrir el generador
         self.OpGenPushButton.clicked.connect(lambda:self.Open_generator())
@@ -72,6 +73,7 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.MeasurePushButton.clicked.connect(lambda:print(self.ventana.seleccion.text()))
         
         self.AmplSpinBox.valueChanged.connect(lambda:print(self.AmplSpinBox.value()))
+        self.AmplSpinBox.valueChanged.connect(lambda:self.Generador.setAmplitude(float(self.AmplSpinBox.value())))
         self.MaxFreqSpinBox.valueChanged.connect(lambda:print(self.MaxFreqSpinBox.value()))
         self.MinFreqSpinBox.valueChanged.connect(self.MinFreqSpinBox.value)
         self.NumFreqSpinBox.valueChanged.connect(self.NumFreqSpinBox.value)
@@ -92,10 +94,10 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.ventana = OpenDeviceWindow()
         # Para obtener el ID lo que en realidad haremos es llamar al 
         # resource manager de VISA y fraccionar su contenido en pedazos.
-        item1 = "Item 1 de prueba"
-        self.ventana.listWidget.addItem(item1)
-        item2 = "Item 2 de prueba"
-        self.ventana.listWidget.addItem(item2)
+        ID=self.rm.list_resources()
+        for i in ID:
+            self.ventana.listWidget.addItem(i)
+          #  print(ID)
         self.ventana.show()
         self.ventana.exec_()
 
@@ -103,7 +105,8 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         
     def Open_generator(self):
         GenID = self.Get_device_ID()
-
+        print(GenID)
+        self.Generador = Generador(GenID)
         # función para abrir el instrumento
         # Luego hacemos que aparezcan las características del detector en la
         # pantalla.
@@ -120,6 +123,7 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         
     def Open_detector(self):
         DetID = self.Get_device_ID()
+        self.Detector = Osciloscopio(DetID)
         
         self.label_6.setEnabled(True)
         self.label_7.setEnabled(True)
@@ -135,6 +139,63 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
     def Measure_Signal(self):
         self.SaveDataPushButton.setEnabled(True)
         self.SaveImagePushButton.setEnabled(True)
+    
+class Generador():
+    def __init__(self,ID):
+        self.obj_visa=self.rm
+        self.ID = ID
+         
+    def setFrequency(self,freq):
+        self.obj_visa.write("SOURce1:FREQuency:FIXed "+str(freq))
+        
+    def setAmplitude(self,amp):
+        self.obj_visa.write("SOURce1:VOLTage:LEVel:IMMediate:AMPLitude "+str(amp))
+        
+    def setWaveform(self,waveform ='Senoidal'):
+        switcher = {'Senoidal':"SIN",'Cuadrada':"SQU",'Pulso':"PULS"}
+        self.obj_visa.write("SOURce1:FUNCtion "+switcher.get(waveform,'Senoidal'))  
+
+        
+class Osciloscopio():
+
+    def __init__(self,ID):
+        self.obj_visa=rm.open_resource(ID)
+        self.ID = ID
+        self.parameters = None
+        
+    def setBaseTime(self,scale):
+        self.obj_visa.write('HORizontal:MAIN:SCALe '+str(scale))
+       # self.obj_visa.write('HORizontal:DELay:SCALe {}'.format(scale))
+ 
+    def capturaPantalla(self):
+        if self.parameters is None:
+            YOFF_in_dl = float(self.obj_visa.query("WFMP:YOFF?"))
+            YZERO_in_YUNits = float(self.obj_visa.query("WFMP:YZERO?"))
+            YMUlt = float(self.obj_visa.query("WFMP:YMULT?"))
+            self.parameters = (YOFF_in_dl,YZERO_in_YUNits,YMUlt)
+        (YOFF_in_dl , YZERO_in_YUNits , YMUlt) = self.parameters
+        curve_in_dl = np.array(self.obj_visa.query_binary_values('CURV?', datatype='b', is_big_endian=True))
+        valores = ((curve_in_dl - YOFF_in_dl)*YMUlt)+YZERO_in_YUNits
+        intervalo = float(osci.obj_visa.query('WFMPre:XINcr?'))
+        tiempos = np.arange(len(valores))*intervalo
+        return tiempos, valores        
+ 
+def sweepe(generador, osciloscopio, init_freq = 100, end_freq = 10100, cant_med = 100):
+    paso = np.floor(np.divide(end_freq - init_freq,cant_med))
+    values = np.zeros(cant_med)
+    freqs = np.add(np.multiply(np.arange(cant_med), paso), init_freq)
+    for i,freq in enumerate(freqs):
+        periodo = np.divide(1,freq)
+        osciloscopio.setBaseTime(0.1*periodo*4)
+        # Escribir Generador
+        generador.setFrequency(freq)
+        # Esperamos a que se setee y lea bien
+        time.sleep(1)
+        # Consulta Osciloscopio
+        osci.obj_visa.write('MEASUrement:IMMed:TYPE PK2pk')
+        values[i] = float(osci.obj_visa.query('MEASUREMENT:IMMed:VALue?'))
+    return freqs, values       
+        
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])
