@@ -6,6 +6,7 @@ Created on Mon Apr 22 19:32:14 2019
 """
 
 import numpy as np
+import sounddevice as sd
 import visa
 import matplotlib.pyplot as plt
 import time
@@ -14,7 +15,7 @@ import time
 #from lantz.core import mfeats
 
 from interfaz_caracterizacion_ui import *
-from abrir_dispositivo_ui import *
+from abrir_dispositivo_extendido import *
 from PyQt5.QtWidgets import QMessageBox
 #import design
 class OpenDeviceWindow(QtWidgets.QDialog,Ui_Dialog):     
@@ -24,18 +25,23 @@ class OpenDeviceWindow(QtWidgets.QDialog,Ui_Dialog):
 
         self.buttonBox.accepted.connect(self.aceptar)
         self.buttonBox.rejected.connect(self.rechazar)
+ #       self.TreeWidget.itemClicked.connect()
      #   self.seleccion = self.listWidget.currentItem()
         
 
     def aceptar(self):
         print("este botón funciona")
-        self.seleccion = self.listWidget.currentItem()
+        self.seleccion = self.TreeWidget.currentItem()
+        print(self.seleccion)
+        print(self.seleccion is None)
         return self.seleccion
 
 
     def rechazar(self):
         msg=QMessageBox.about(self, "Información", "Proceso cancelado por el usuario")
-        msg.setIcon(QMessageBox.Information)
+        #msg.setIcon(QMessageBox.Information)
+        self.seleccion = None
+        return self.seleccion
  
        
 class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
@@ -94,19 +100,47 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.ventana = OpenDeviceWindow()
         # Para obtener el ID lo que en realidad haremos es llamar al 
         # resource manager de VISA y fraccionar su contenido en pedazos.
+        USBdevices =  QtWidgets.QTreeWidgetItem(self.ventana.TreeWidget)
+        USBdevices.setText(0, str("USB devices"))
         ID=self.rm.list_resources()
         for i in ID:
-            self.ventana.listWidget.addItem(i)
+            QtWidgets.QTreeWidgetItem(USBdevices).setText(0, str(i))
           #  print(ID)
+ 
+        devices = sd.query_devices()
+        
+        PlacaAudio =  QtWidgets.QTreeWidgetItem(self.ventana.TreeWidget)
+        PlacaAudio.setText(0, str("Audio Board"))
+        AudioDeviceList = {}
+        for i in range(len(devices)):
+            print(devices[i]['name']) 
+            QtWidgets.QTreeWidgetItem(PlacaAudio).setText(0, str(devices[i]['name']))
+            AudioDeviceList[devices[i]['name']]=i
+        self.audiodevices = AudioDeviceList.copy()    
+        
+        print(AudioDeviceList)
         self.ventana.show()
         self.ventana.exec_()
-
-        return self.ventana.seleccion.text()
+        print("veamos qué onda")
+        if self.ventana.seleccion is None:
+            print("No hay valores asignados")
+        else:
+            print(self.ventana.seleccion.text(0))
+            print(self.ventana.seleccion.parent().text(0))
+            return self.ventana.seleccion.parent().text(0),self.ventana.seleccion.text(0)
+    
         
     def Open_generator(self):
-        GenID = self.Get_device_ID()
+        GenType,GenID = self.Get_device_ID()
         print(GenID)
-        self.Generador = Generador(GenID)
+        print(GenType)
+        if GenID is None:
+            print("Proceso cancelado por el usuario")
+        elif GenType == 'Audio Board':
+            sd.default.device = [sd.default.device[0],self.audiodevices[GenID]]
+            print(self.audiodevices[GenID])
+        else:
+              self.Generador = Generador(GenID)
         # función para abrir el instrumento
         # Luego hacemos que aparezcan las características del detector en la
         # pantalla.
@@ -122,8 +156,15 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.GIDLineEdit.setStyleSheet("color: blue;")
         
     def Open_detector(self):
-        DetID = self.Get_device_ID()
-        self.Detector = Osciloscopio(DetID)
+        DetType,DetID = self.Get_device_ID()
+        
+        if DetID is None:
+            print("Proceso cancelado por el usuario")
+        elif DetType == 'Audio Board':
+            sd.default.device = [self.audiodevices[DetID],sd.default.device[0]]
+            print(self.audiodevices[DetID])
+        else:
+            self.Detector = Osciloscopio(DetID)
         
         self.label_6.setEnabled(True)
         self.label_7.setEnabled(True)
