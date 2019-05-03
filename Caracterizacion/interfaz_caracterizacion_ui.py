@@ -141,7 +141,7 @@ class Ui_MainWindow(object):
         self.SaveDataPushButton.setGeometry(QtCore.QRect(60, 240, 191, 23))
         self.SaveDataPushButton.setObjectName("SaveDataPushButton")
         self.Axis = MplWidget(self.groupBox_2)
-        self.Axis.setGeometry(QtCore.QRect(350, 30, 361, 301))
+        self.Axis.setGeometry(QtCore.QRect(280, 30, 460, 301))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)

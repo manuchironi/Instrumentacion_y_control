@@ -22,6 +22,7 @@ class MplCanvas(Canvas):
         Canvas.__init__(self, self.fig)
         Canvas.setSizePolicy(self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         Canvas.updateGeometry(self)
+        
 
 # Matplotlib widget
 class MplWidget(QtWidgets.QWidget):
