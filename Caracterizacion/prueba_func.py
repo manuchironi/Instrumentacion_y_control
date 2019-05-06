@@ -10,9 +10,10 @@ import sounddevice as sd
 import visa
 import matplotlib.pyplot as plt
 import time
-#from lantz import MessageBasedDriver, Q_
-#from lantz.core import Feat
-#from lantz.core import mfeats
+from lantz import MessageBasedDriver, Q_
+from lantz.core import Feat
+from lantz.core import mfeats
+from lantz import ureg
 
 from interfaz_caracterizacion_ui import *
 from abrir_dispositivo_extendido import *
@@ -87,7 +88,8 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
        
         
         # Se captura el valor de los parametros ingresados
-        self.AmplSpinBox.valueChanged.connect(lambda:self.Set_value('Amplitude','AmplSpinBox'))
+    #    self.AmplSpinBox.valueChanged.connect(lambda:self.Set_value('Amplitude','AmplSpinBox'))
+        self.AmplSpinBox.valueChanged.connect(lambda:self.Set_amplitude())
         self.FreqSpinBox.valueChanged.connect(lambda:self.Set_value('Frequency','FreqSpinBox'))
         self.MaxFreqSpinBox.valueChanged.connect(lambda:self.Set_value('MaxFrequency','MaxFreqSpinBox'))
         self.MinFreqSpinBox.valueChanged.connect(lambda:self.Set_value('MinFrequency','MinFreqSpinBox'))
@@ -117,9 +119,14 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         self.Axis.canvas.ax.plot(y)
         self.Axis.canvas.draw()
     
-    def Set_value(self,parametro,widget):
-        exec('self.'+str(parametro)+' = float(self.'+str(widget)+'.value())')
-        return exec('self.'+str(parametro))    
+    def Set_value(self,objeto,parametro,widget):
+        if objeto == 'Audio Board':
+           exec('self.'+str(parametro)+' = float(self.'+str(widget)+'.value())')
+           return exec('self.'+str(parametro))    
+        else:
+           self.Generador.initialize()
+           self.Generador.amplitude = float(self.AmplSpinBox.value())*ureg.volts
+           self.Generador.finalize()
            
     def Get_device_ID(self):
         self.ventana = OpenDeviceWindow()
@@ -153,6 +160,7 @@ class MainWindow(QtWidgets.QMainWindow,Ui_MainWindow):
         #    print(self.ventana.seleccion.text(0))
          #   print(self.ventana.seleccion.parent().text(0))
             return self.ventana.seleccion.parent().text(0),self.ventana.seleccion.text(0)
+            print(self.ventana.seleccion.parent().text(0),self.ventana.seleccion.text(0))
     
         
     def Open_generator(self):
@@ -228,6 +236,5 @@ if __name__ == "__main__":
     window = MainWindow()
     window.show()
     app.exec_()
-    
     
     
