@@ -1,6 +1,6 @@
 
 int analogPin = 3;     // Entrada analogica del fotodetector
-int ledPin = 5;        // Salida del PWM al LeED
+int ledPin = 5;        // Salida del PWM al LED
 int steps = 100;
 int input = 0;      
 int count = 0;      //
@@ -18,7 +18,7 @@ float error_derivado = 0;
 
 void setup()
 {
-  Serial.begin(9600);          //  setup serial
+  Serial.begin(9600); //  setup serial
 }
 
 void loop()
