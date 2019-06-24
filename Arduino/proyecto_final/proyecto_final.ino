@@ -6,7 +6,7 @@ const int pasos2a1 = -500;  // Pasos de motor entre la posicion 2 y la 1
 const int pasos2a3 = 500;  // Pasos de motor entre la posicion 2 y la 3
 
 // Valores de protocolo de busqueda del fotogate
-const int max_pasos = 300; // Amplitud de pasos de busqueda (para un lado y para el otro)
+const int max_pasos = 500; // Amplitud de pasos de busqueda (para un lado y para el otro)
 const int steps_por_paso = 1; // Cada step de busqueda avanza N pasos
 
 // initialize the stepper library on pins 8 through 11:
