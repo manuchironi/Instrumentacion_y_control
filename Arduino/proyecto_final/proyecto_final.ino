@@ -15,10 +15,6 @@ const int PASOS2A3 = 300;  // Pasos de motor entre la posicion 2 y la 3
 const int MAX_PASOS = 500; // Amplitud de pasos de busqueda (para un lado y para el otro)
 const int PHOTO_TRESH = 30; // Valor contra el cual se compara a entrada del photogate
 
-=======
-const int max_pasos = 500; // Amplitud de pasos de busqueda (para un lado y para el otro)
-const int steps_por_paso = 1; // Cada step de busqueda avanza N pasos
-
 // initialize the stepper library on pins 8 through 11:
 Stepper myStepper(STEPS_PER_REVOLUTION, 8, 9, 10, 11);
 
