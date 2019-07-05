@@ -1,6 +1,6 @@
 // Elegir si medio paso o paso completo. Ver también SetDirection.
 
-int respiro=4000; // elegir según el Paso, necesita un mínimo para no trabarse
+int respiro=8000; // elegir según el Paso, necesita un mínimo para no trabarse
 // con el 28BYJ48, medio paso no necesita respiro, y simple de a dos bobinas necesita 350.
 //int Paso [ 8 ][ 4 ] = //doble paso
 //   {  {1, 0, 0, 0},
